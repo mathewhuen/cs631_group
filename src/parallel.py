@@ -6,10 +6,11 @@ from threading import Thread, Event
 import multiprocessing
 from multiprocessing import Process, Manager, Barrier
 
+import scipy
 import numpy as np
 from matplotlib import pyplot as plt
 
-from utils import AverageDict, Timer, get_csr_col_inds
+from utils import AverageDict, Timer, get_csr_col_inds, get_dense_col_inds
 
 
 def update_shared_data(namespace, share_node_ids, nodes, step):
@@ -30,11 +31,12 @@ class Neighborhood(Process):
     ):
         super().__init__()
         self.proc_id = proc_id
+        get_col_inds = get_csr_col_inds if isinstance(A, scipy.sparse.csr_matrix) else get_dense_col_inds
         self.nodes = {
             idx: Node(
                 node_id=idx,
                 # adj={j: A[idx, j] for j in range(A[idx].shape[-1]) if A[idx, j] != 0},
-                adj={j: A[idx, j] for j in get_csr_col_inds(A, idx)},
+                adj={j: A[idx, j] for j in get_col_inds(A, idx)},
                 S_0=SIR_0[idx, 0],
                 I_0=SIR_0[idx, 1],
                 R_0=SIR_0[idx, 2],

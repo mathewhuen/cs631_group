@@ -56,5 +56,9 @@ class Timer:
         return TimerInstance(d, key)
 
 
+def get_dense_col_inds(A, row):
+    return [col for col in range(A[row].shape[-1]) if A[row, col] != 0]
+
+
 def get_csr_col_inds(A, row):
     return A.indices[A.indptr[row]:A.indptr[row + 1]]

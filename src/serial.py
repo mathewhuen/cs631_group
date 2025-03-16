@@ -10,7 +10,7 @@ import scipy
 import numpy as np
 from matplotlib import pyplot as plt
 
-from utils import AverageDict, Timer, get_csr_col_inds
+from utils import AverageDict, Timer, get_csr_col_inds, get_dense_col_inds
 
 
 class SerialNetwork:
@@ -30,7 +30,7 @@ class SerialNetwork:
         if isinstance(self.A, scipy.sparse.csr_matrix):
             self.adj = {i: get_csr_col_inds(self.A, i) for i in range(self.n)}
         else:
-            self.adj = {i: [j for j in range(self.A.shape[1]) if self.A[i, j] != 0] for i in range(self.n)}
+            self.adj = {i: get_dense_col_inds(self.A, i) for i in range(self.n)}
 
     def step(self):
         SIRN_1 = self.SIRN_0.copy()
