@@ -201,7 +201,7 @@ class Node:
 
 
 class ParallelManager:
-    def __init__(self, A, SIR_0, assignments, beta, gamma, delta, dt, max_steps):
+    def __init__(self, A, SIR_0, assignments, beta, gamma, delta, dt, max_steps, sync_freq=10, update_freq=None):
         self.A = A
         self.SIR_0 = SIR_0
         self.assignments = assignments
@@ -220,8 +220,8 @@ class ParallelManager:
         for i in range(A.shape[0]):
             self.namespace.output[i] = self.manager.dict()
         self.event = self.manager.Event()
-        self.sync_freq = 10
-        self.update_freq = None  # update the output dataset. Use None if not streaming
+        self.sync_freq = sync_freq
+        self.update_freq = update_freq  # update the output dataset. Use None if not streaming
         self.neighborhoods = [
             Neighborhood(
                 proc_id=proc_id,
@@ -328,6 +328,7 @@ if __name__ == "__main__":
     gamma = 0.1
     delta = 0.01
     dt = 0.2
+    update_freq = None
     max_steps = 500
     parallel_manager = ParallelManager(
         A=A,
@@ -338,6 +339,7 @@ if __name__ == "__main__":
         delta=delta,
         dt=dt,
         max_steps=max_steps,
+        update_freq=update_freq,
     )
     data = parallel_manager.run()
     # parallel_manager.visualize_basic(**data)
