@@ -10,7 +10,7 @@ MAX_DIST = np.pow(2, 0.5)
 
 
 def weight(a, b):
-    return MAX_DIST - np.pow(np.pow((a - b), 2).sum(), 0.5)
+    return (MAX_DIST - np.pow(np.pow((a - b), 2).sum(), 0.5)) / MAX_DIST
 
 
 def sample_grid(n_nodes, n_hubs=0, suburb_factor=10):
@@ -66,7 +66,7 @@ def generate_data(
     max_N,
     SIRN_strategy="random",
 ):
-    A, points = sample_grid(100, n_hubs=5, suburb_factor=6)
+    A, points = sample_grid(n_nodes, n_hubs=n_hubs, suburb_factor=suburb_factor)
     if SIRN_strategy == "random":
         SIRN = sample_SIRN_random(A, min_N, max_N)
     elif SIRN_strategy == "1_infected_per":
