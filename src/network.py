@@ -58,6 +58,25 @@ def sample_SIRN_1n(A, min_N, max_N):
     return SIRN
 
 
+def sample_SIRN_weighted(A, min_N, max_N):
+    n = A.shape[0]
+    SIRN = np.zeros((n, 4), dtype=np.float64)
+
+    ws = A.sum(axis=-1)
+    ws = ws / ws.max()
+
+    for i in range(n):
+        # m = len(get_col_inds(A, i))
+        N = int(ws[i] * (max_N - min_N) + min_N)
+        S = np.random.choice(range(N))
+        I = np.random.choice(range(N - S))
+        SIRN[i, 0] = S
+        SIRN[i, 1] = I
+        SIRN[i, 2] = N - (S + I)
+        SIRN[i, 3] = N
+    return SIRN
+
+
 def generate_data(
     n_nodes,
     n_hubs,
@@ -71,6 +90,8 @@ def generate_data(
         SIRN = sample_SIRN_random(A, min_N, max_N)
     elif SIRN_strategy == "1_infected_per":
         SIRN = sample_SIRN_1n(A, min_N, max_N)
+    elif SIRN_strategy == "weighted":
+        SIRN = sample_SIRN_weighted(A, min_N, max_N)
     else:
         raise NotImplementedError()
     return A, points, SIRN
