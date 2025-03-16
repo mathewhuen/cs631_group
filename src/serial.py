@@ -27,7 +27,7 @@ class SerialNetwork:
         self.output = output
         self.times = times
         self.timer = Timer()
-        if isinstance(self.A, scipy.sparse.csr_matrix):
+        if isinstance(self.A, scipy.sparse.csr_array):
             self.adj = {i: get_csr_col_inds(self.A, i) for i in range(self.n)}
         else:
             self.adj = {i: get_dense_col_inds(self.A, i) for i in range(self.n)}

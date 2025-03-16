@@ -69,7 +69,7 @@ class Neighborhood(Process):
     ):
         super().__init__()
         self.proc_id = proc_id
-        get_col_inds = get_csr_col_inds if isinstance(A, scipy.sparse.csr_matrix) else get_dense_col_inds
+        get_col_inds = get_csr_col_inds if isinstance(A, scipy.sparse.csr_array) else get_dense_col_inds
         self.nodes = {
             idx: Node(
                 node_id=idx,
