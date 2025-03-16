@@ -1,4 +1,42 @@
 r"""
+Parallel Epidemiological Simulator.
+
+Call :class:`ParallelManager` to run simulations as follows:
+```python
+A = np.array([
+    [0, .2, 0.7, 0, 0],
+    [.1, 0, 0, 0, 0],
+    [0.5, 0, 0, 0, 0.1],
+    [0, 0, 0, 0, .1],
+    [0, 0, 0.075, .1, 0],
+])
+SIR_0 = np.array([
+    [100, 0, 0],
+    [100, 1, 0],
+    [500, 0, 0],
+    [40, 1, 0],
+    [100, 1, 0],
+])
+assignments = [(0, 1, 2), (3, 4)]
+beta = 0.35
+gamma = 0.1
+delta = 0.01
+dt = 0.2
+update_freq = 10
+max_steps = 500
+parallel_manager = ParallelManager(
+    A=A,
+    SIR_0=SIR_0,
+    assignments=assignments,
+    beta=beta,
+    gamma=gamma,
+    delta=delta,
+    dt=dt,
+    max_steps=max_steps,
+    update_freq=update_freq,
+)
+data = parallel_manager.run()
+```
 """
 
 import time
@@ -307,7 +345,6 @@ class ParallelManager:
 
 
 if __name__ == "__main__":
-    import scipy
     multiprocessing.set_start_method("spawn")
     A = np.array([
         [0, .2, 0.7, 0, 0],
