@@ -93,7 +93,7 @@ def save_dataset(adjacency_matrix, population_matrix, dataset_folder):
     print(f"Population matrix saved to {population_matrix_path}")
 
 
-def generate_dataset(node_range, sparsity_range, mixing_rate_range, population_range):
+def generate_random_data(node_range, sparsity_range, mixing_rate_range, population_range):
     """
     """
     scale = np.random.choice(range(*node_range))
@@ -109,4 +109,4 @@ if __name__ == "__main__":
     mixing_rate_range = (0.1, 0.9)
     population_range = (100, 500)
 
-    A, SIRN = generate_dataset(node_range, sparsity_range, mixing_rate_range, population_range)
+    A, SIRN = generate_random_data(node_range, sparsity_range, mixing_rate_range, population_range)
