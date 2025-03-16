@@ -42,7 +42,8 @@ data = parallel_manager.run()
 import time
 from threading import Thread, Event
 import multiprocessing
-from multiprocessing import Process, Manager, Barrier
+from multiprocessing import Process, Manager, Barrier, Queue
+import queue
 
 import scipy
 import numpy as np
@@ -63,9 +64,35 @@ def update_shared_data(namespace, share_node_ids, nodes, step):
         }
 
 
+class DataCollector(Thread):
+    def __init__(self, q, timeout=0.2):
+        super().__init__()
+        self.q = q
+        self.timeout = timeout
+        self.output = dict()
+
+    def process_data(self, data):
+        node_id, step, SIRN = data
+        if node_id not in self.output:
+            self.output[node_id] = dict()
+        self.output[node_id][step] = SIRN
+
+    def run(self):
+        while True:
+            try:
+                data = self.q.get(timeout=self.timeout)
+                if data is None:
+                    break
+                self.process_data(data)
+            except queue.Empty:
+                pass
+
+
 class Neighborhood(Process):
     def __init__(
-        self, proc_id, A, SIR_0, ids, namespace, barrier, event, beta, gamma, delta, sync_freq, dt=1, update_freq=None, max_steps=1_000,
+        self,
+        proc_id, A, SIR_0, ids, namespace, barrier, beta, gamma, delta, sync_freq,
+        dt=1, update_freq=None, max_steps=1_000, output_stream=None,
     ):
         super().__init__()
         self.proc_id = proc_id
@@ -108,7 +135,7 @@ class Neighborhood(Process):
         self.update_freq = update_freq
         self.max_steps = max_steps
         self.barrier = barrier
-        self.event = event
+        self.output_stream = output_stream
 
         self.timer = Timer()
 
@@ -147,7 +174,10 @@ class Neighborhood(Process):
 
     def update_output(self, step):
         for node_id, node in self.nodes.items():
-            self.namespace.output[node_id][step] = (node.S.item(), node.I.item(), node.R.item(), node.N.item())
+            if self.output_stream:
+                self.output_stream.put((node_id, step, (node.S.item(), node.I.item(), node.R.item(), node.N.item())))
+            else:
+                self.namespace.output[node_id][step] = (node.S.item(), node.I.item(), node.R.item(), node.N.item())
 
     def run(self):
         times = AverageDict()
@@ -239,7 +269,10 @@ class Node:
 
 
 class ParallelManager:
-    def __init__(self, A, SIR_0, assignments, beta, gamma, delta, dt, max_steps, sync_freq=10, update_freq=None):
+    def __init__(
+        self, A, SIR_0, assignments, beta, gamma, delta, dt, max_steps,
+        sync_freq=10, update_freq=None, use_data_streaming=True,
+    ):
         self.A = A
         self.SIR_0 = SIR_0
         self.assignments = assignments
@@ -257,9 +290,17 @@ class ParallelManager:
         self.namespace.times = self.manager.dict()
         for i in range(A.shape[0]):
             self.namespace.output[i] = self.manager.dict()
-        self.event = self.manager.Event()
         self.sync_freq = sync_freq
         self.update_freq = update_freq  # update the output dataset. Use None if not streaming
+
+        self.use_data_streaming = use_data_streaming
+        if use_data_streaming:
+            self.data_queue = Queue()
+            self.data_collector = DataCollector(self.data_queue)
+        else:
+            self.data_queue = None
+            self.data_collector = None
+
         self.neighborhoods = [
             Neighborhood(
                 proc_id=proc_id,
@@ -268,7 +309,6 @@ class ParallelManager:
                 ids=assignment,
                 namespace=self.namespace,
                 barrier=self.barrier,
-                event=self.event,
                 beta=self.beta,
                 gamma=self.gamma,
                 delta=self.delta,
@@ -276,18 +316,28 @@ class ParallelManager:
                 dt=self.dt,
                 update_freq=self.update_freq,
                 max_steps=self.max_steps,
+                output_stream=self.data_queue,
             )
             for proc_id, assignment in enumerate(self.assignments)
         ]
 
     def run(self, verbose=True):
+        if self.use_data_streaming:
+            self.data_collector.start()
         time0 = time.time()
         for neighborhood in self.neighborhoods:
             neighborhood.start()
         for neighborhood in self.neighborhoods:
             neighborhood.join()
         time1 = time.time()
-        output = {k: {_k: _v for _k, _v in v.items()} for k, v in self.namespace.output.items()}
+
+        if self.use_data_streaming:
+            self.data_queue.put(None)
+            self.data_collector.join()
+            output = self.data_collector.output
+            output = {k: {_k: _v for _k, _v in v.items()} for k, v in output.items()}
+        else:
+            output = {k: {_k: _v for _k, _v in v.items()} for k, v in self.namespace.output.items()}
 
         time_keys = {
             "runtime": "runtime",
@@ -367,6 +417,7 @@ if __name__ == "__main__":
     dt = 0.2
     update_freq = None
     max_steps = 500
+    use_data_streaming = True
     parallel_manager = ParallelManager(
         A=A,
         SIR_0=SIR_0,

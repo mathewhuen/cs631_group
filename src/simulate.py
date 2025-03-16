@@ -104,6 +104,7 @@ def parse_arguments():
     parser.add_argument("--SIRN_strategy", type=str, required=True)
     parser.add_argument("--n_workers", type=int, required=True)
     parser.add_argument("--network_load_scheme", type=str, default="map")  # map, random
+    parser.add_argument("--use_data_streaming", action="store_true")
     parser.add_argument("--data_load_path", type=str)
     parser.add_argument("--data_save_path", type=str)
 
@@ -117,7 +118,7 @@ def run_experiment(
     max_steps,
     update_freq,
     n_regular_nodes, n_hubs, suburb_factor,
-    partition_levels, SIRN_strategy, n_workers, network_load_scheme,
+    partition_levels, SIRN_strategy, n_workers, network_load_scheme, use_data_streaming,
     data_load_path, data_save_path,
     params,  # hacky: for storing all of the args together
 ):
@@ -195,6 +196,7 @@ def run_experiment(
             dt=dt,
             max_steps=max_steps,
             update_freq=update_freq,
+            use_data_streaming=use_data_streaming,
         )
         data = parallel_manager.run()
 

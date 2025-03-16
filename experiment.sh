@@ -17,4 +17,5 @@ python src/simulate.py \
   --SIRN_strategy weighted \
   --n_workers 1 \
   --network_load_scheme map \
+  --use_data_streaming \
   --data_save_path results
