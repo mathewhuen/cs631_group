@@ -95,13 +95,14 @@ class Neighborhood(Process):
         dt=1, update_freq=None, max_steps=1_000, output_stream=None,
     ):
         super().__init__()
+
         self.proc_id = proc_id
         get_col_inds = get_csr_col_inds if isinstance(A, scipy.sparse.csr_array) else get_dense_col_inds
         self.nodes = {
-            idx: Node(
+            int(idx): Node(
                 node_id=idx,
                 # adj={j: A[idx, j] for j in range(A[idx].shape[-1]) if A[idx, j] != 0},
-                adj={j: A[idx, j] for j in get_col_inds(A, idx)},
+                adj={int(j): A[idx, j] for j in get_col_inds(A, idx)},
                 S_0=SIR_0[idx, 0],
                 I_0=SIR_0[idx, 1],
                 R_0=SIR_0[idx, 2],
@@ -151,6 +152,7 @@ class Neighborhood(Process):
             }
 
     def get_val(self, node_id, step):
+        # node_id = int(node_id)
         if node_id in self.nodes:
             node = self.nodes[node_id]
             return {"S": node.S, "I": node.I, "R": node.R, "N": node.N, "step": step, "id": node_id}, True
@@ -428,6 +430,7 @@ if __name__ == "__main__":
         dt=dt,
         max_steps=max_steps,
         update_freq=update_freq,
+        use_data_streaming=use_data_streaming,
     )
     data = parallel_manager.run()
     # parallel_manager.visualize_basic(**data)
